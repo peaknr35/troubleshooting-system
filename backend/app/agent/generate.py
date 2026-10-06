@@ -18,6 +18,7 @@ from typing import Any, AsyncIterator
 
 from ..config import get_settings
 from .prompts import CONSOLIDATE_SYSTEM, base_system, manual_system
+from .skills import load_skills
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ async def consolidate(client, user_msg: str, assistant_msg: str) -> list[str]:
 
 async def manual_middle(*, client, ev, assistant_name, memories, history, message,
                         registry, max_steps) -> AsyncIterator:
-    system = manual_system(assistant_name, memories, registry.manual_catalog())
+    system = manual_system(assistant_name, memories, registry.manual_catalog(), load_skills())
     convo = _render_history(history, message)
     scratch = ""
     for step in range(1, max_steps + 1):
@@ -104,7 +105,7 @@ async def manual_middle(*, client, ev, assistant_name, memories, history, messag
     # steps exhausted -> force a plain final answer
     yield ev.phase("reason", "Finalizing")
     final = await client.complete(
-        base_system(assistant_name, memories),
+        base_system(assistant_name, memories, load_skills()),
         convo + scratch + "\n\nGive your final answer to the user now.",
         max_tokens=1200,
     )
@@ -135,7 +136,7 @@ async def pydantic_middle(*, provider, model, api_key, ev, assistant_name, memor
     model_obj = _pai_model(provider, model, api_key)
     tools = [Tool(s.func, name=s.name, description=s.description, takes_ctx=False)
              for s in registry.all()]
-    agent = Agent(model_obj, system_prompt=base_system(assistant_name, memories), tools=tools)
+    agent = Agent(model_obj, system_prompt=base_system(assistant_name, memories, load_skills()), tools=tools)
     prefix = _render_history(history, "")
     prompt = (prefix + "\nUser: " + message) if prefix.strip() else message
     yield ev.phase("reason", "Thinking")

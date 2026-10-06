@@ -9,3 +9,5 @@ httpx>=0.27
 # assistant layer
 pydantic-ai-slim[openai,anthropic]>=0.0.20
 rich>=13.7
+# Optional -- only if you enable Google Calendar sync (APP_GOOGLE_CALENDAR=1):
+#   pip install google-api-python-client google-auth

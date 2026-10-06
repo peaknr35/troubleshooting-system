@@ -1,94 +1,86 @@
-# Deep Research Studio
+# Local Agent
 
-A bring-your-own-key **deep research app**. Ask a question; a FastAPI backend runs
-a real research workflow — **plan → search the live web → synthesize → write a
-cited report** — and streams every step to a polished Next.js UI as it happens.
-Supports **OpenAI, Anthropic, and Kimi K2**. No API keys are ever stored on the
-server; keys live in your browser and are sent per request.
+A **local-first personal AI assistant** you can read end to end. Talk to it in a
+terminal TUI or a browser dashboard off **one brain**; it remembers useful things in
+a single local **SQLite** file and calls **tools** for real work. **Deep Research
+Studio** -- plan -> web search -> cited report -- is now one of its tools
+(`deep_research`). Bring your own model key (**OpenAI, Anthropic, Kimi K2**); nothing
+is stored on a server.
 
-This repository is organized as an **ICM workspace** (Interpretable Context
-Methodology): the folder structure itself documents the system for both humans
-and AI agents. Start at [`CLAUDE.md`](CLAUDE.md) (routing) and
-[`CONTEXT.md`](CONTEXT.md) (how it fits together).
+Organized as an **ICM workspace**: every folder documents itself. Start at
+[`CLAUDE.md`](CLAUDE.md) (routing), [`CONTEXT.md`](CONTEXT.md) (how it fits), and
+[`FILE-MAP.md`](FILE-MAP.md) (every file).
 
-## Features
-- **Live streaming** of planning, per-sub-question research + sources, and a
-  token-streamed final report (Server-Sent Events).
-- **Three providers, your key:** OpenAI, Anthropic (Claude), Kimi K2 (Moonshot).
-- **Model switching** and a **compare mode** (same question across up to 4 models,
-  results + timing side by side).
-- **API key manager** in the browser: save, import/export JSON, clear.
-- **State persists** across navigation (Home ↔ Compare) and reloads.
-- **Export to Google Docs**: copy-for-Docs, or one-click OAuth doc creation.
-- **Container-ready:** `docker compose up` locally; backend deploys to Cloud Run.
+## What it does
+- **Visible turn loop:** RECEIVE -> RECALL -> (REASON -> ACT -> OBSERVE)* -> REMEMBER
+  -> REPLY, streamed live in the terminal and the dashboard.
+- **Dual-track tool calling:** PydanticAI (native function-calling, normalized across
+  providers) by default, with a manual prompt-JSON backend as a transparent fallback.
+- **One SQLite brain** (`~/.assistant/state.db`): facts, conversations, tool traces,
+  a local calendar, skills -- with a recall gate before each turn and a consolidation
+  gate that saves only what's worth keeping (plus explicit "remember that...").
+- **Tools:** `web_search`, `deep_research`, `remember`/`recall`, `calendar_*` (local,
+  optional Google sync), `file_read`/`file_write` (sandboxed to a workspace).
+- **Skills:** drop a markdown procedure in [`skills/`](skills/) and the agent can follow it.
+- **Built-in evals:** deterministic (offline) + LLM-as-judge, to test if a change helps.
 
-## Quick start (Docker — recommended)
+## Quick start -- terminal
+```bash
+cd backend
+python -m venv .venv && . .venv/Scripts/activate   # Windows; macOS/Linux: . .venv/bin/activate
+pip install -r requirements.txt
+APP_PROVIDER=openai APP_API_KEY=sk-...  python -m app.cli
+```
+Type to chat; `/mem` shows memory; `/exit` quits. Your memory persists in
+`~/.assistant/state.db`.
+
+## Quick start -- dashboard (both faces, one backend)
 ```bash
 docker compose up --build
 ```
-- Frontend: http://localhost:3000
-- Backend:  http://localhost:8080  (health at `/health`, docs at `/docs`)
+- Dashboard: http://localhost:3000  (Assistant chat home; Research at `/research`)
+- Backend:   http://localhost:8080  (`/health`, `/docs`)
 
-Then open the app, click **Keys**, paste an API key for a provider, ask a
-question, and watch it research.
-
-## Run locally without Docker
-Backend:
-```bash
-cd backend
-python -m venv .venv && . .venv/Scripts/activate   # Windows; use .venv/bin/activate on macOS/Linux
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8080
-```
-Frontend:
-```bash
-cd frontend
-npm install
-npm run dev     # http://localhost:3000 (uses Turbopack)
-```
-
-> **Windows / E: drive note:** this project lives on a drive whose filesystem
-> returns `EISDIR` from `readlink` on normal files, which breaks the webpack
-> `next build` locally (compile succeeds; Node's prerender step fails). It does
-> **not** affect Docker (Linux) or Cloud Run, and `npm run dev` uses Turbopack
-> which is unaffected. To run a local production build, build via Docker or from
-> a folder on your C: drive. The backend and its tests run fine on E:.
+Click **Keys**, paste a provider key, and chat -- watch the turn loop + memory panel live.
 
 ## Providers & keys
-| Provider | Default model | Get a key |
+| Provider | Default model | Key |
 |---|---|---|
 | OpenAI | `gpt-5.1` | https://platform.openai.com/api-keys |
 | Anthropic | `claude-opus-5-5` | https://console.anthropic.com/settings/keys |
 | Kimi K2 | `kimi-k2-0905-preview` | https://platform.moonshot.ai |
 
-All model IDs are overridable in the UI. See [`_shared/providers.md`](_shared/providers.md).
+Keys are per-request (dashboard) or from the local environment (terminal) -- never
+stored on a server.
 
-## Project layout
-```
-CLAUDE.md / CONTEXT.md   ICM entry + task router
-_config/                 project facts, tech stack, conventions, status
-_shared/                 API/SSE contract, provider matrix, workflow spec
-planning/                specs, architecture, decision records
-backend/                 FastAPI app + tests + Dockerfile
-frontend/                Next.js app + Dockerfile
-docs/                    API reference, setup, changelog
-ops/                     Cloud Run deploy + local run recipes
-docker-compose.yml       local full stack
-```
-
-## Tests
+## Tests & evals
 ```bash
 cd backend
 pip install -r requirements-dev.txt
-pytest        # 19 tests: health, auth flow, provider connections, streaming
+pytest                          # 28 tests (agent loop, tools, sandbox, providers, research)
+python -m evals.run             # deterministic always; LLM-as-judge if APP_API_KEY is set
 ```
 
-## Deploy
-Backend → Google Cloud Run: see [`ops/deploy/cloud-run-backend.md`](ops/deploy/cloud-run-backend.md).
-Frontend → any Node host / Vercel / Cloud Run; set `NEXT_PUBLIC_BACKEND_URL`.
+## Project layout
+```
+CLAUDE.md / CONTEXT.md / FILE-MAP.md   ICM entry, router, generated index
+_shared/     contracts (agent-turn, memory-schema, tools, api, providers, research-workflow)
+_config/ _templates/ planning/          factory settings, copy-to-create starters, specs/decisions
+backend/     FastAPI app: agent/ memory/ tools/ providers/ services/ routes/ cli.py + evals/ + tests/
+frontend/    Next.js app: chat dashboard + research UI
+skills/      user-editable procedures
+docs/ ops/   docs + deploy/runbooks
+```
 
-## License / references
-Built as an ICM per the method of Van Clief & McDermott (arXiv:2603.16021).
-Structure and workflow informed by ShenSeanChen's launch-DeepResearch
-[backend](https://github.com/ShenSeanChen/launch-DeepResearch-Backend) and
-[frontend](https://github.com/ShenSeanChen/launch-DeepResearch-Frontend).
+## Safety & local-first notes
+- `file_write` is sandboxed to `APP_FILE_ROOT` (`~/.assistant/workspace`); set
+  `APP_FILE_UNRESTRICTED=1` to widen (path-escape check still applies otherwise).
+- Windows E: drive: local `next build` fails (a `readlink` quirk) -- build the frontend
+  via Docker or a C: path. `npm run dev` (Turbopack) and `pytest` run fine on E:.
+
+## References
+Agent shape informed by [waku-agent](https://github.com/ShenSeanChen/waku-agent);
+research engine from ShenSeanChen's launch-DeepResearch
+[backend](https://github.com/ShenSeanChen/launch-DeepResearch-Backend) /
+[frontend](https://github.com/ShenSeanChen/launch-DeepResearch-Frontend). Built as an ICM
+(Van Clief & McDermott, arXiv:2603.16021).

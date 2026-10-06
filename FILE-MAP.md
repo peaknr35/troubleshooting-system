@@ -34,6 +34,7 @@ One job: the facts BOTH apps (and the terminal) must agree on. This is the
 
 ### _templates/
 One job: hold blank starters so a new unit of work begins as a copy, not a blank
+- `new-skill.md`
 - `CONTEXT.md`
 - `decision-record.template.md`
 - `folder-CONTEXT.template.md`
@@ -109,6 +110,7 @@ One job: the actual research work, kept out of the route handlers.
 
 ### backend/app/tools/
 One job: the practical things the agent can do. Each tool is a typed async function
+- `google_calendar.py`
 - `CONTEXT.md`
 - `__init__.py`
 - `base.py`
@@ -119,8 +121,20 @@ One job: the practical things the agent can do. Each tool is a typed async funct
 - `registry.py`
 - `web_search.py`
 
+### backend/evals/
+One job: two-tier evals -- deterministic checks (offline, no key) + LLM-as-judge
+- `CONTEXT.md`
+- `__init__.py`
+- `deterministic.py`
+- `judge.py`
+- `run.py`
+
+### backend/evals/cases/
+- `basic.jsonl`
+
 ### backend/tests/
 One job: prove the API, auth flow, and provider wiring work -- with no real keys or
+- `test_m3.py`
 - `CONTEXT.md`
 - `__init__.py`
 - `conftest.py`
@@ -195,16 +209,16 @@ One job: render the conversation and the live turn loop. Reads chat state from
 
 ### frontend/contexts/
 One job: hold the app's shared, persistent state. Mounted in `app/providers.tsx`
-- `ChatContext.tsx`
 - `ApiKeyContext.tsx`
 - `CONTEXT.md`
+- `ChatContext.tsx`
 - `ResearchContext.tsx`
 
 ### frontend/lib/
 One job: types, the API client, reducers, storage, the model catalog, and export
-- `chatTypes.ts`
 - `CONTEXT.md`
 - `api.ts`
+- `chatTypes.ts`
 - `googleDocs.ts`
 - `models.ts`
 - `research.ts`
@@ -251,3 +265,9 @@ One job: WHAT to build and WHY (not HOW). Implementation follows the backend/fro
 - `assistant-spec.md`
 - `backend-spec.md`
 - `frontend-spec.md`
+
+### skills/
+One job: reusable "how to do X" procedures, in plain markdown, surfaced to the agent
+- `CONTEXT.md`
+- `daily-standup.md`
+- `summarize-url.md`

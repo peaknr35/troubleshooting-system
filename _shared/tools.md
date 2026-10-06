@@ -24,3 +24,8 @@ filesystem; the path-escape check is always applied relative to the root otherwi
 
 ## Adding a tool
 See `../_templates/new-tool.md`.
+
+## Google calendar (optional)
+Set `APP_GOOGLE_CALENDAR=1` + `APP_GOOGLE_TOKEN_FILE` to mirror `calendar_create` to
+Google Calendar (needs `pip install google-api-python-client google-auth`). The local
+SQLite calendar stays the source of truth; sync is best-effort and failures are non-fatal.

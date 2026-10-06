@@ -1,0 +1,3 @@
+{"id": "remember-pref", "message": "Remember that I prefer dark mode", "expect_tool": "remember"}
+{"id": "make-event", "message": "Add a dentist appointment on 2026-10-10 at 09:00", "expect_tool": "calendar_create"}
+{"id": "greeting", "message": "Say a short hello", "expect_tool": null}

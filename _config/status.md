@@ -51,3 +51,12 @@ This file is the human-readable summary._
 - [x] lib/api.ts generalized (streamResearch + streamChat + fetchMemory/Trace); chatTypes mirror
 - [x] ChatContext (state persists across navigation + reloads)
 - [x] Research UI moved to /research; nav rebranded (Assistant / Research / Compare); typecheck + build green
+
+## M3 -- Skills, evals, Google calendar (2026-10-06)
+- [x] skills/ loader: markdown procedures surfaced in the system prompt (daily-standup, summarize-url)
+- [x] evals/: deterministic (offline, 17 checks) + LLM-as-judge (run_turn trace) + `python -m evals.run`
+- [x] Optional Google Calendar sync (APP_GOOGLE_CALENDAR=1); local SQLite stays the source of truth
+- [x] Tests: 28 passing (added skills, google-disabled, deterministic-eval gate)
+
+All three milestones (M1-M3) complete. Next ideas: token-streamed replies in the manual
+backend; agent.iter live streaming for the PydanticAI backend; FTS/sqlite-vec recall.

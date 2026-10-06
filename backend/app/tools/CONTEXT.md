@@ -5,25 +5,24 @@ returning a string observation; the SAME function feeds the manual backend (prom
 describes it) and PydanticAI (infers its schema). Mirrors ../../../_shared/tools.md.
 
 ## What's here
-- `base.py` -- `ToolSpec` (name, description, typed func), `ToolResult`, `ToolRegistry`
-  (+ `manual_catalog()` for the prompt).
+- `base.py` -- `ToolSpec`, `ToolResult`, `ToolRegistry` (+ `manual_catalog()`).
 - `registry.py` -- `build_registry(client)` assembles the set for one turn.
 - `web_search.py` -- wraps `services/search.web_search`.
 - `deep_research.py` -- wraps `services/research.run_research` (the DRS pipeline).
-- `calendar.py` -- `calendar_create` / `calendar_list` over the local events table.
+- `calendar.py` -- `calendar_create` / `calendar_list` over the local events table
+  (mirrors to Google when sync is enabled).
+- `google_calendar.py` -- (optional) sync to Google when `APP_GOOGLE_CALENDAR=1`.
 - `file_tools.py` -- `file_read` / `file_write`, sandboxed to `APP_FILE_ROOT`
   (toggle `APP_FILE_UNRESTRICTED=1` to widen; path-escape check always on).
 - `memory_tools.py` -- `remember` / `recall` (explicit long-term memory).
 
 ## Rules
-- A tool returns a short string the model can read; it never raises to the loop
-  (`ToolSpec.run` traps errors into an observation).
-- Tools that need the LLM (deep_research) receive the client via `build_registry`.
-- Keep args simple + typed so both backends can call them; document them in the docstring.
+- A tool returns a short string the model can read; it never raises to the loop.
+- Tools needing the LLM (deep_research) get the client via `build_registry`.
+- Optional integrations (Google) import their libs lazily and degrade to a no-op.
 
 ## Where to add a tool
-See `../../../_templates/new-tool.md`: write `make_<name>()` in a file here, register
-it in `registry.py`, and (if it needs a new capability) add a `_shared/tools.md` note.
+See `../../../_templates/new-tool.md`.
 
 ## Links
 - Tool contract: `../../../_shared/tools.md` . Parent: `../CONTEXT.md`
