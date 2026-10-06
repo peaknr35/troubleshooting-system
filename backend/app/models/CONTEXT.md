@@ -1,25 +1,25 @@
 # backend/app/models -- request & event models
 
-One job: define and validate the data that crosses the API boundary. The event
-model here is the server side of the SSE contract.
+One job: define and validate the data crossing the API boundary. The event models
+here are the server side of the SSE contracts.
 
 ## What's here
-- `research.py` -- `Provider` enum; `ResearchRequest` (validated body); `Source`;
-  `ResearchEvent` (+ `to_sse()`); `EventFactory` (events sharing one research_id).
+- `research.py` -- `Provider` enum; `ResearchRequest`; `Source`; `ResearchEvent`
+  (+ `EventFactory`). Mirrors `_shared/api-contract.md`.
+- `chat.py` -- `ChatRequest`; `TurnEvent` (+ `TurnEventFactory`) with the phase/
+  event types. Mirrors `_shared/agent-turn-contract.md`.
 - `__init__.py`
 
-## Mirrors (one home per fact)
-`ResearchEvent` + the event types mirror `../../../_shared/api-contract.md`. To
-change the event shape: edit the contract first, then here, then `frontend/lib/types.ts`.
-
 ## Rules
-- Validation lives in Pydantic field validators (min lengths, enum, ranges).
+- Validation lives in Pydantic field validators.
 - `api_key` is `repr=False` so it never prints in logs or tracebacks.
+- Change an event shape in the `_shared/` contract first, then here, then the
+  frontend's `lib/types.ts` / `lib/chatTypes.ts`.
 
 ## Where to add things
-- New request field -> add to `ResearchRequest` with a validator + default.
-- New event type -> add to the `EventType` Literal + an `EventFactory` method, then
-  update `_shared/api-contract.md` and `frontend/lib/types.ts`.
+- New request field -> the request model + a validator.
+- New event type -> the `*EventType` Literal + a factory method + the contract + the frontend.
 
 ## Links
-- Contract: `../../../_shared/api-contract.md` . Parent: `../CONTEXT.md`
+- Contracts: `../../../_shared/agent-turn-contract.md`, `../../../_shared/api-contract.md`
+  . Parent: `../CONTEXT.md`

@@ -1,50 +1,49 @@
 # Backend (FastAPI) -- contract
 
-One job: expose a health check, a provider catalog, and a streaming research
-endpoint that runs plan -> research -> report and emits the SSE events defined in
-`../_shared/api-contract.md`. Stateless; no key storage.
+One job: the local-first assistant brain + the deep-research pipeline. Exposes a
+streaming chat turn (`/chat/stream`), read-only memory/trace, the research stream,
+a health check, and a provider catalog. A terminal TUI runs the same turn loop.
 
 ## Inputs
-- Reference (every change): `../_shared/api-contract.md`, `../_shared/providers.md`,
-  `../_shared/research-workflow.md`, `../_config/conventions.md`.
-- Working: the request body (validated by `app/models/research.py`).
-Do NOT load: the frontend. The only coupling is the SSE contract above.
+- Reference (every change): `../_shared/agent-turn-contract.md`,
+  `../_shared/memory-schema.md`, `../_shared/tools.md`, `../_shared/api-contract.md`,
+  `../_shared/providers.md`, `../_shared/research-workflow.md`, `../_config/conventions.md`.
+Do NOT load: the frontend. The only coupling is the SSE contracts above.
 
 ## Structure
 ```
 app/
   main.py            FastAPI app, CORS, routers
-  config.py          Settings (env, APP_ prefix) + provider default models
-  logging_config.py  logging setup + redact() (never log keys)
-  models/research.py Pydantic request + event models + EventFactory
-  providers/         LLM clients behind an LLMClient protocol
-    base.py          protocol, ProviderError, build_client() factory
-    openai_client.py OpenAICompatibleClient (serves OpenAI AND Kimi)
-    anthropic_client.py AnthropicClient
-  services/
-    search.py        web_search() -- DuckDuckGo, no key, returns Source[]
-    research.py      run_research() -- the async generator pipeline
-  routes/
-    health.py        GET/HEAD /health, GET /providers
-    research.py      POST /research/stream -> StreamingResponse
-tests/               pytest: health, auth flow, provider connections, stream
+  config.py          Settings (env APP_*) + provider/agent/file/db settings
+  logging_config.py  logging + redact() (never log keys)
+  agent/             the turn loop (loop.py), dual-track engine (generate.py), prompts, skills
+  memory/            SQLite brain: schema.sql, db.py, store.py (facts/turns/tool_runs/calendar)
+  tools/             tool registry + web_search, deep_research, calendar, file, memory tools
+  providers/         LLM clients behind the LLMClient protocol (+ build_client)
+  services/          research pipeline (now the deep_research tool) + web search
+  models/            Pydantic models: research.py, chat.py (TurnEvent)
+  routes/            health.py (/health,/providers), research.py (/research/stream),
+                     chat.py (/chat/stream, /memory, /trace)
+  cli.py             Rich TUI terminal: python -m app.cli  (console-script: assistant)
+evals/               (M3) deterministic + LLM-as-judge eval runner
+tests/               pytest: health, auth, providers, research stream, agent turn loop
 ```
 
-## Process (how a request flows)
-1. `routes/research.py` receives a `ResearchRequest` (Pydantic validates -> 422 on bad input).
-2. `build_client(provider, api_key, model)` constructs the provider client.
-3. `run_research(req, client)` yields `ResearchEvent`s; each is serialized to SSE.
-4. Any `ProviderError`/exception becomes one `error` event; the server never 500s mid-stream.
+## Flow (a chat turn)
+`routes/chat.py` -> `agent/loop.run_turn()` yields TurnEvents (RECEIVE -> RECALL ->
+REASON/ACT/OBSERVE via `agent/generate.run_middle` -> REMEMBER -> REPLY). Tools come
+from `tools/registry.build_registry(client)`; memory from `memory/store`.
 
 ## Run / test
-- Dev: `uvicorn app.main:app --reload --port 8080`
-- Tests: `pip install -r requirements.txt -r requirements-dev.txt && pytest`
+- Terminal: set `APP_API_KEY` (+ `APP_PROVIDER`), then `python -m app.cli`.
+- API: `uvicorn app.main:app --reload --port 8080`.
+- Tests: `pip install -r requirements-dev.txt && pytest`.
 
 ## Human check
-Hit `GET /health` -> `{"status":"ok"}`. `pytest` green. A real key in the UI
-streams plan/sources/finding/report events in order.
+`pytest` green; `python -m app.cli` shows the banner; a chat turn streams phases and a
+fact survives a restart. `GET /health` -> ok.
 
 ## Avoid
-- Logging anything that could contain a key (use `redact()`).
-- Sending Anthropic `thinking`/`temperature` (400s on thinking-on models).
-- Sending OpenAI `max_tokens`/`temperature` to reasoning models (use `max_completion_tokens`, no temp).
+- Logging anything key-shaped (use `redact()`).
+- Business logic in routes/tools -- put turn logic in `agent/`, memory SQL in `memory/`.
+- File writes outside `APP_FILE_ROOT` unless `APP_FILE_UNRESTRICTED=1`.

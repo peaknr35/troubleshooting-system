@@ -6,11 +6,11 @@ Regenerate after adding or moving files.
 
 
 ### (root)
-- `FILE-MAP.md`
 - `.env.example`
 - `.gitignore`
 - `CLAUDE.md`
 - `CONTEXT.md`
+- `FILE-MAP.md`
 - `README.md`
 - `docker-compose.yml`
 
@@ -23,7 +23,10 @@ One job: the stable facts about the project that rarely change per run. Referenc
 - `tech-stack.md`
 
 ### _shared/
-One job: the facts BOTH apps must agree on. This is the authoritative home; the
+One job: the facts BOTH apps (and the terminal) must agree on. This is the
+- `agent-turn-contract.md`
+- `memory-schema.md`
+- `tools.md`
 - `CONTEXT.md`
 - `api-contract.md`
 - `providers.md`
@@ -31,6 +34,7 @@ One job: the facts BOTH apps must agree on. This is the authoritative home; the
 
 ### _templates/
 One job: hold blank starters so a new unit of work begins as a copy, not a blank
+- `new-tool.md`
 - `CONTEXT.md`
 - `decision-record.template.md`
 - `folder-CONTEXT.template.md`
@@ -39,7 +43,7 @@ One job: hold blank starters so a new unit of work begins as a copy, not a blank
 - `new-provider.md`
 
 ### backend/
-One job: expose a health check, a provider catalog, and a streaming research
+One job: the local-first assistant brain + the deep-research pipeline. Exposes a
 - `.dockerignore`
 - `.env.example`
 - `CONTEXT.md`
@@ -50,14 +54,32 @@ One job: expose a health check, a provider catalog, and a streaming research
 
 ### backend/app/
 One job: the importable app. `main.py` assembles it; everything else is grouped by
+- `cli.py`
 - `CONTEXT.md`
 - `__init__.py`
 - `config.py`
 - `logging_config.py`
 - `main.py`
 
+### backend/app/agent/
+One job: run one conversational turn as a visible sequence of phases, calling tools
+- `CONTEXT.md`
+- `__init__.py`
+- `generate.py`
+- `loop.py`
+- `prompts.py`
+- `skills.py`
+
+### backend/app/memory/
+One job: persist and recall what is worth keeping, in one local SQLite file. No
+- `CONTEXT.md`
+- `db.py`
+- `schema.sql`
+- `store.py`
+
 ### backend/app/models/
-One job: define and validate the data that crosses the API boundary. The event
+One job: define and validate the data crossing the API boundary. The event models
+- `chat.py`
 - `CONTEXT.md`
 - `__init__.py`
 - `research.py`
@@ -71,7 +93,8 @@ One job: turn `(provider, api_key, model)` into an object with `complete()` and
 - `openai_client.py`
 
 ### backend/app/routes/
-One job: thin FastAPI handlers that validate input and delegate to services.
+One job: thin FastAPI handlers that validate input and delegate to the agent/services.
+- `chat.py`
 - `CONTEXT.md`
 - `__init__.py`
 - `health.py`
@@ -84,8 +107,21 @@ One job: the actual research work, kept out of the route handlers.
 - `research.py`
 - `search.py`
 
+### backend/app/tools/
+One job: the practical things the agent can do. Each tool is a typed async function
+- `CONTEXT.md`
+- `__init__.py`
+- `base.py`
+- `calendar.py`
+- `deep_research.py`
+- `file_tools.py`
+- `memory_tools.py`
+- `registry.py`
+- `web_search.py`
+
 ### backend/tests/
 One job: prove the API, auth flow, and provider wiring work -- with no real keys or
+- `test_agent.py`
 - `CONTEXT.md`
 - `__init__.py`
 - `conftest.py`
@@ -130,8 +166,8 @@ One job: the `/compare` page. One file.
 
 ### frontend/components/
 One job: all the UI pieces. Pages compose these; components read/write shared state
-- `CONTEXT.md`
 - `ApiKeyManager.tsx`
+- `CONTEXT.md`
 - `CompareView.tsx`
 - `ExportMenu.tsx`
 - `FindingCard.tsx`
@@ -145,8 +181,8 @@ One job: all the UI pieces. Pages compose these; components read/write shared st
 
 ### frontend/contexts/
 One job: hold the app's shared, persistent state. Mounted in `app/providers.tsx`
-- `CONTEXT.md`
 - `ApiKeyContext.tsx`
+- `CONTEXT.md`
 - `ResearchContext.tsx`
 
 ### frontend/lib/
@@ -161,8 +197,8 @@ One job: types, the API client, the reducer, storage, the model catalog, and the
 
 ### frontend/public/
 One job: files served as-is at the site root by Next.js (e.g. `/favicon.ico`).
-- `CONTEXT.md`
 - `.gitkeep`
+- `CONTEXT.md`
 
 ### ops/
 - `CONTEXT.md`
@@ -189,11 +225,13 @@ One job: durable architecture docs (component map, data flow) referenced when bu
 
 ### planning/decisions/
 One job: a dated log of non-obvious technical choices and why they were made.
-- `CONTEXT.md`
+- `2026-10-06_agent-architecture.md`
 - `2026-10-05_provider-abstraction.md`
+- `CONTEXT.md`
 
 ### planning/specs/
 One job: WHAT to build and WHY (not HOW). Implementation follows the backend/frontend
+- `assistant-spec.md`
 - `CONTEXT.md`
 - `backend-spec.md`
 - `frontend-spec.md`

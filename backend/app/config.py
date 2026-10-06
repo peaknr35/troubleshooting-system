@@ -1,6 +1,8 @@
 """Application settings. Values come from env vars (prefix APP_) or defaults.
 
-No provider API keys live here -- keys arrive per request from the client.
+No provider API keys live here -- keys arrive per request (dashboard) or from the
+local environment at call time (terminal). This keeps secrets out of the cached
+settings object.
 """
 from __future__ import annotations
 
@@ -15,7 +17,8 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Deep Research Studio API"
-    version: str = "0.1.0"
+    assistant_name: str = "Local Agent"
+    version: str = "0.2.0"
     log_level: str = "INFO"
 
     # Comma-separated list of allowed CORS origins ("*" allows all).
@@ -24,7 +27,7 @@ class Settings(BaseSettings):
     # Seconds allowed for a single provider call.
     request_timeout: float = 120.0
 
-    # Research defaults (overridable per request where noted).
+    # --- research pipeline (now also the deep_research tool) ---
     default_max_subquestions: int = 4
     search_max_results: int = 5
 
@@ -33,6 +36,21 @@ class Settings(BaseSettings):
     anthropic_default_model: str = "claude-opus-5-5"
     kimi_default_model: str = "kimi-k2-0905-preview"
     kimi_base_url: str = "https://api.moonshot.ai/v1"
+
+    # --- assistant / agent ---
+    default_provider: str = "openai"
+    # "pydantic_ai" (native function-calling, default) or "manual" (prompt-JSON).
+    # Resolves to manual automatically if pydantic_ai is unavailable at runtime.
+    agent_backend: str = "pydantic_ai"
+    agent_max_steps: int = 6
+
+    # --- local-first storage ---
+    # Empty -> ~/.assistant/state.db  and  ~/.assistant/workspace
+    db_path: str = ""
+    file_root: str = ""
+    # When False (default), file tools may only touch file_root. Flip to allow the
+    # whole filesystem (loud warning; path-escape check is always on relative to root).
+    file_unrestricted: bool = False
 
     @property
     def origins_list(self) -> list[str]:

@@ -1,22 +1,22 @@
 # _shared -- cross-cutting contracts (ICM Layer 3, the single source of truth)
 
-One job: the facts BOTH apps must agree on. This is the authoritative home; the
-backend and frontend mirror these.
+One job: the facts BOTH apps (and the terminal) must agree on. This is the
+authoritative home; the backend and frontend mirror these.
 
 ## What's here
-- `api-contract.md` -- endpoints + the SSE event schema. Mirrored by
+- `agent-turn-contract.md` -- the chat turn SSE schema. Mirrored by
+  `backend/app/models/chat.py` and `frontend/lib/chatTypes.ts`.
+- `memory-schema.md` -- the SQLite tables. Mirrors `backend/app/memory/schema.sql`.
+- `tools.md` -- the tool registry + how a tool node is shaped (both backends).
+- `api-contract.md` -- the research endpoints + SSE event schema. Mirrored by
   `backend/app/models/research.py` and `frontend/lib/types.ts`.
 - `providers.md` -- the provider/model matrix. Mirrored by `backend/app/config.py`
   + `routes/health.py` and `frontend/lib/models.ts`.
-- `research-workflow.md` -- the plan->research->report pipeline spec, implemented in
-  `backend/app/services/research.py`.
+- `research-workflow.md` -- the plan->research->report pipeline (the `deep_research` tool).
 
 ## Rules
-- Change a contract HERE FIRST, then update both apps' mirrors in the same change.
-- One home per fact: if it is defined here, other files link, never re-state it.
-
-## Where to add things
-- A new cross-app agreement -> a file here, then wire both apps to it.
+- Change a contract HERE FIRST, then update every mirror in the same change.
+- One home per fact: defined here -> others link, never re-state.
 
 ## Links
 - Backend: `../backend/CONTEXT.md` . Frontend: `../frontend/CONTEXT.md` . Root: `../CLAUDE.md`

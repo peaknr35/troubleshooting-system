@@ -1,60 +1,63 @@
-# Deep Research Studio
+# Local Agent (with Deep Research Studio inside)
 
-A bring-your-own-key deep research app: a FastAPI backend that runs a real
-plan -> research -> report workflow and streams progress live, and a Next.js
-frontend that renders the research as it happens. Supports OpenAI, Anthropic,
-and Kimi K2. No API keys are ever stored on the server.
+A local-first personal AI assistant: talk to it in the terminal or a browser
+dashboard off one brain; it remembers useful things in a single local SQLite file
+and calls tools for practical work. Deep Research Studio -- plan -> web search ->
+cited report -- is now one of its tools (`deep_research`). Bring your own model key
+(OpenAI, Anthropic, Kimi K2); nothing is stored on a server.
 
 ## Where things live
 | Path | What it holds |
 |---|---|
 | `FILE-MAP.md` | Generated index of every file (refresh: `ops/scripts/build-file-map.sh`) |
-| `_config/` | Factory settings: what this project is, tech stack, conventions, build status |
-| `_shared/` | Cross-cutting contracts both apps obey: API/SSE schema, provider matrix, workflow spec |
-| `_templates/` | Copy-to-create starters: new provider, endpoint, component, decision record |
-| `planning/` | Feature specs, architecture, decision records |
-| `backend/` | FastAPI app (code, tests, Dockerfile) |
-| `frontend/` | Next.js app (code, Dockerfile) |
+| `_config/` | Factory settings: project, tech stack, conventions, build status |
+| `_shared/` | Contracts: agent-turn, memory-schema, tools, api, providers, research-workflow |
+| `_templates/` | Copy-to-create starters: new tool/provider/endpoint/component/skill/decision |
+| `planning/` | Specs, architecture, decision records |
+| `backend/` | FastAPI app: agent loop, memory (SQLite), tools, providers, research, CLI, tests |
+| `frontend/` | Next.js app: chat dashboard (M2) + the research UI |
+| `skills/` | (M3) user-editable procedures the agent can follow |
 | `docs/` | API docs, setup guide, changelog |
-| `ops/` | Deploy scripts and runbooks (Docker, Cloud Run) |
+| `ops/` | Deploy scripts and runbooks |
 
 ## Route by intent
-| Task | Go to | Read first |
-|---|---|---|
-| Get oriented / find any file | `FILE-MAP.md` | this file -> FILE-MAP.md |
-| Understand the whole system | `CONTEXT.md` | this file -> CONTEXT.md |
-| Work inside any folder | that folder's `CONTEXT.md` | it states purpose, contents, rules, where to add things |
-| Change the SSE event shape | `_shared/api-contract.md` | then update BOTH backend + frontend |
-| Add a provider / endpoint / UI piece | `_templates/` | the matching checklist, then the folder CONTEXT |
-| Change the research steps | `_shared/research-workflow.md` -> `backend/app/services/research.py` | - |
-| Work on the API | `backend/CONTEXT.md` | - |
-| Work on the UI | `frontend/CONTEXT.md` | - |
-| Deploy or run locally | `ops/CONTEXT.md` | - |
-| Record a decision | `planning/decisions/` (copy the template) | - |
-| Check what is done | `_config/status.md` | - |
+| Task | Go to |
+|---|---|
+| Get oriented / find any file | `FILE-MAP.md` |
+| Understand the system | `CONTEXT.md` |
+| Work inside any folder | that folder's `CONTEXT.md` |
+| Change the chat turn / phases | `_shared/agent-turn-contract.md` -> `backend/app/agent/` |
+| Add/adjust memory | `_shared/memory-schema.md` -> `backend/app/memory/` |
+| Add a tool | `_templates/new-tool.md` -> `backend/app/tools/` |
+| Add/adjust a provider | `_shared/providers.md` -> `backend/app/providers/` + `frontend/lib/models.ts` |
+| Change the research steps | `_shared/research-workflow.md` -> `backend/app/services/research.py` |
+| Work on the UI | `frontend/CONTEXT.md` |
+| Deploy or run locally | `ops/CONTEXT.md` |
+| Check what is done | `_config/status.md` |
 
-## Tech stack (summary; full detail in `_config/tech-stack.md`)
-- Backend: Python 3.12, FastAPI, Uvicorn, Pydantic v2, SSE streaming
-- LLM SDKs: `openai` (OpenAI + Kimi via base_url), `anthropic` (Claude)
-- Frontend: Next.js 15 (App Router), TypeScript, Tailwind CSS
-- Containers: Docker + docker-compose; backend deploys to Google Cloud Run
+## Tech stack (full detail in `_config/tech-stack.md`)
+- Backend: Python 3.12, FastAPI, Pydantic v2, SQLite (stdlib), PydanticAI + a manual
+  prompt-JSON backend (dual-track tool calling), Rich (terminal TUI).
+- Frontend: Next.js 15 (App Router), TypeScript, Tailwind.
+- LLM SDKs: openai (OpenAI + Kimi via base_url), anthropic.
 
 ## Commands
 | Action | Command |
 |---|---|
-| Run both apps locally | `docker compose up --build` |
-| Backend dev server | `cd backend && uvicorn app.main:app --reload --port 8080` |
+| Terminal agent | `cd backend && APP_API_KEY=... python -m app.cli` |
+| API server | `cd backend && uvicorn app.main:app --reload --port 8080` |
 | Backend tests | `cd backend && pytest` |
-| Frontend dev server | `cd frontend && npm run dev` |
-| Refresh the file index | `bash ops/scripts/build-file-map.sh` |
+| Frontend dev | `cd frontend && npm run dev` |
+| Run both (Docker) | `docker compose up --build` |
+| Refresh file index | `bash ops/scripts/build-file-map.sh` |
 
 ## The one rule
-Secrets stay client-side. The server never persists an API key -- keys arrive per
-request and live only for that request. Never add server-side key storage.
+Secrets stay client-side / local -- the server never persists an API key. Memory is a
+single local SQLite file (`~/.assistant/state.db`); file tools are sandboxed to a
+workspace dir unless `APP_FILE_UNRESTRICTED=1`.
 
 ## Conventions
-- **Every folder has a `CONTEXT.md`** -- its identity, contents, rules, and where to
-  add things. Open it first when you enter a folder. The root keeps the only
-  `CLAUDE.md` (this file); folders never get their own entry file.
-- Folders `kebab-case/`; contracts `CONTEXT.md`; config/docs `kebab-case.md`;
-  decisions `YYYY-MM-DD_title.md`; Python `snake_case.py`; React `PascalCase.tsx`.
+- Every folder has a `CONTEXT.md` (identity, contents, rules, where to add things);
+  the root keeps the only `CLAUDE.md`.
+- Folders `kebab-case/`; Python `snake_case.py`; React `PascalCase.tsx`; decisions
+  `YYYY-MM-DD_title.md`.

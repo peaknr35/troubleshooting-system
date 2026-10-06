@@ -1,26 +1,29 @@
 # backend/app/routes -- HTTP / SSE endpoints
 
-One job: thin FastAPI handlers that validate input and delegate to services.
+One job: thin FastAPI handlers that validate input and delegate to the agent/services.
 
 ## What's here
 - `health.py` -- `GET/HEAD /health` + `GET /providers` (the model catalog).
-- `research.py` -- `POST /research/stream`: builds the client and streams the
-  pipeline's events as SSE (`text/event-stream`).
+- `research.py` -- `POST /research/stream`: the research pipeline as SSE.
+- `chat.py` -- `POST /chat/stream` (the agent turn, SSE) + read-only `GET /memory`
+  and `GET /trace` for the dashboard.
 - `__init__.py`
 
 ## Reads / Writes
-- Reads: `../models/research.py` (request), `../providers/base.py` (`build_client`),
-  `../services/research.py` (`run_research`).
-- Writes: an HTTP response (JSON or an SSE stream). No persistence.
+- Reads: `../models/` (requests), `../agent/loop.run_turn`, `../providers/base`,
+  `../services/research`, `../memory/store`.
+- Writes: HTTP responses (JSON or SSE). No persistence here (memory writes happen
+  inside the turn loop).
 
 ## Rules
-- Handlers stay thin -- no business logic here; push it to `../services/`.
+- Handlers stay thin -- turn logic in `../agent/`, research logic in `../services/`.
 - Pydantic rejects bad input as 422 before streaming; in-stream failures become a
   single SSE `error` event, never a 500 mid-stream.
 - A new router module must be registered in `../main.py` (`include_router`).
 
 ## Where to add an endpoint
-See `../../../_templates/new-endpoint.md` (contract first, then model, route, main, test, docs).
+See `../../../_templates/new-endpoint.md`.
 
 ## Links
-- API contract: `../../../_shared/api-contract.md` . Parent: `../CONTEXT.md`
+- Contracts: `../../../_shared/agent-turn-contract.md`, `../../../_shared/api-contract.md`
+  . Parent: `../CONTEXT.md`
