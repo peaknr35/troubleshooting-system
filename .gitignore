@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Node / Next
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Env & secrets (never commit real keys)
+.env
+.env.local
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
