@@ -5,17 +5,16 @@ here so state survives navigation.
 
 ## What's here
 - `layout.tsx` -- root layout + metadata; wraps everything in `Providers`.
-- `providers.tsx` -- mounts `ApiKeyProvider` + `ResearchProvider` + `Header` above
-  the pages, so research/key state persists across route changes.
-- `page.tsx` -- the main research view (renders `ResearchInterface`).
-- `compare/` -- the `/compare` route (its own CONTEXT).
-- `globals.css` -- theme tokens (light/dark) + component classes (`card`, `btn`,
-  `input`, `chip`) + markdown styles. The one place colors are defined.
+- `providers.tsx` -- mounts `ApiKeyProvider` + `ChatProvider` + `ResearchProvider` +
+  `Header` above the pages, so chat/research/key state persists across route changes.
+- `page.tsx` -- the assistant chat home (renders `ChatWindow`).
+- `research/` -- the `/research` route (the original Deep Research Studio UI).
+- `compare/` -- the `/compare` route.
+- `globals.css` -- theme tokens (light/dark) + component classes + markdown styles.
 
 ## Rules
 - Pages are thin: they render a component from `../components/`. Logic lives there.
 - State that must survive navigation lives in a context in `providers.tsx`, not a page.
-- New styles/colors go in `globals.css` tokens, not inline hex.
 
 ## Where to add a page
 Create `app/<route>/page.tsx` that renders a component from `../components/`.

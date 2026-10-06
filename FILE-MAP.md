@@ -24,23 +24,23 @@ One job: the stable facts about the project that rarely change per run. Referenc
 
 ### _shared/
 One job: the facts BOTH apps (and the terminal) must agree on. This is the
-- `agent-turn-contract.md`
-- `memory-schema.md`
-- `tools.md`
 - `CONTEXT.md`
+- `agent-turn-contract.md`
 - `api-contract.md`
+- `memory-schema.md`
 - `providers.md`
 - `research-workflow.md`
+- `tools.md`
 
 ### _templates/
 One job: hold blank starters so a new unit of work begins as a copy, not a blank
-- `new-tool.md`
 - `CONTEXT.md`
 - `decision-record.template.md`
 - `folder-CONTEXT.template.md`
 - `new-component.md`
 - `new-endpoint.md`
 - `new-provider.md`
+- `new-tool.md`
 
 ### backend/
 One job: the local-first assistant brain + the deep-research pipeline. Exposes a
@@ -54,9 +54,9 @@ One job: the local-first assistant brain + the deep-research pipeline. Exposes a
 
 ### backend/app/
 One job: the importable app. `main.py` assembles it; everything else is grouped by
-- `cli.py`
 - `CONTEXT.md`
 - `__init__.py`
+- `cli.py`
 - `config.py`
 - `logging_config.py`
 - `main.py`
@@ -79,9 +79,9 @@ One job: persist and recall what is worth keeping, in one local SQLite file. No
 
 ### backend/app/models/
 One job: define and validate the data crossing the API boundary. The event models
-- `chat.py`
 - `CONTEXT.md`
 - `__init__.py`
+- `chat.py`
 - `research.py`
 
 ### backend/app/providers/
@@ -94,9 +94,9 @@ One job: turn `(provider, api_key, model)` into an object with `complete()` and
 
 ### backend/app/routes/
 One job: thin FastAPI handlers that validate input and delegate to the agent/services.
-- `chat.py`
 - `CONTEXT.md`
 - `__init__.py`
+- `chat.py`
 - `health.py`
 - `research.py`
 
@@ -121,10 +121,10 @@ One job: the practical things the agent can do. Each tool is a typed async funct
 
 ### backend/tests/
 One job: prove the API, auth flow, and provider wiring work -- with no real keys or
-- `test_agent.py`
 - `CONTEXT.md`
 - `__init__.py`
 - `conftest.py`
+- `test_agent.py`
 - `test_auth.py`
 - `test_health.py`
 - `test_providers.py`
@@ -164,6 +164,11 @@ One job: the `/compare` page. One file.
 - `CONTEXT.md`
 - `page.tsx`
 
+### frontend/app/research/
+One job: the `/research` page -- the original Deep Research Studio UI, now a sibling
+- `CONTEXT.md`
+- `page.tsx`
+
 ### frontend/components/
 One job: all the UI pieces. Pages compose these; components read/write shared state
 - `ApiKeyManager.tsx`
@@ -179,14 +184,25 @@ One job: all the UI pieces. Pages compose these; components read/write shared st
 - `ResearchInterface.tsx`
 - `SourceList.tsx`
 
+### frontend/components/chat/
+One job: render the conversation and the live turn loop. Reads chat state from
+- `CONTEXT.md`
+- `ChatWindow.tsx`
+- `MemoryPanel.tsx`
+- `PhaseBadge.tsx`
+- `ToolCallCard.tsx`
+- `TurnTimeline.tsx`
+
 ### frontend/contexts/
 One job: hold the app's shared, persistent state. Mounted in `app/providers.tsx`
+- `ChatContext.tsx`
 - `ApiKeyContext.tsx`
 - `CONTEXT.md`
 - `ResearchContext.tsx`
 
 ### frontend/lib/
-One job: types, the API client, the reducer, storage, the model catalog, and the
+One job: types, the API client, reducers, storage, the model catalog, and export
+- `chatTypes.ts`
 - `CONTEXT.md`
 - `api.ts`
 - `googleDocs.ts`
@@ -225,13 +241,13 @@ One job: durable architecture docs (component map, data flow) referenced when bu
 
 ### planning/decisions/
 One job: a dated log of non-obvious technical choices and why they were made.
-- `2026-10-06_agent-architecture.md`
 - `2026-10-05_provider-abstraction.md`
+- `2026-10-06_agent-architecture.md`
 - `CONTEXT.md`
 
 ### planning/specs/
 One job: WHAT to build and WHY (not HOW). Implementation follows the backend/frontend
-- `assistant-spec.md`
 - `CONTEXT.md`
+- `assistant-spec.md`
 - `backend-spec.md`
 - `frontend-spec.md`

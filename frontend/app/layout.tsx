@@ -4,9 +4,9 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Deep Research Studio",
+  title: "Local Agent",
   description:
-    "Ask a question and watch a real research workflow run live across OpenAI, Anthropic, and Kimi K2. Bring your own key.",
+    "A local-first personal AI assistant: chat in the terminal or browser, one SQLite brain, tools for real work. Deep Research Studio is one of its tools. Bring your own key.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

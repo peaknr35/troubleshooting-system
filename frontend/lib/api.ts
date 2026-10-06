@@ -1,10 +1,78 @@
-// SSE client. We POST the request (so EventSource is unusable) and parse the
-// text/event-stream body manually from a fetch ReadableStream.
+// SSE client for both the research stream and the agent chat turn. We POST (so
+// EventSource is unusable) and parse the text/event-stream body from a fetch
+// ReadableStream. One shared reader; two typed entry points.
 import type { Provider, ResearchEvent } from "./types";
+import type { TurnEvent } from "./chatTypes";
 
 export const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/$/, "") || "http://localhost:8080";
 
+async function postSSE<T>(
+  path: string,
+  body: unknown,
+  onEvent: (e: T) => void,
+  onError: (message: string, code: string) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${BACKEND_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (err: any) {
+    if (err?.name === "AbortError") return;
+    onError(`Could not reach the backend at ${BACKEND_URL}.`, "network");
+    return;
+  }
+  if (!res.ok || !res.body) {
+    let msg = `Request failed (${res.status}).`;
+    try {
+      const b = await res.json();
+      if (b?.detail) {
+        msg = typeof b.detail === "string"
+          ? b.detail
+          : b.detail?.[0]?.msg ? `Invalid request: ${b.detail[0].msg}` : JSON.stringify(b.detail);
+      }
+    } catch {
+      /* non-JSON */
+    }
+    onError(msg, res.status === 422 ? "validation" : "provider");
+    return;
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let sep: number;
+      while ((sep = buffer.indexOf("\n\n")) >= 0) {
+        const frame = buffer.slice(0, sep);
+        buffer = buffer.slice(sep + 2);
+        for (const line of frame.split("\n")) {
+          const t = line.trimStart();
+          if (!t.startsWith("data:")) continue;
+          const payload = t.slice(5).trim();
+          if (!payload) continue;
+          try {
+            onEvent(JSON.parse(payload) as T);
+          } catch {
+            /* ignore malformed frame */
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    if (err?.name !== "AbortError") onError("The stream was interrupted.", "network");
+  }
+}
+
+// --- research ---
 export interface StreamParams {
   query: string;
   provider: Provider;
@@ -15,96 +83,74 @@ export interface StreamParams {
   signal?: AbortSignal;
 }
 
-function errorEvent(message: string, code = "internal"): ResearchEvent {
-  return {
-    type: "error",
-    stage: "error",
-    message,
-    data: { code },
-    research_id: "",
-    timestamp: new Date().toISOString(),
-  };
-}
-
-/**
- * Stream a research run. Calls onEvent for every parsed SSE event. Resolves when
- * the stream ends. Network/validation problems are delivered as an `error` event
- * (not thrown), so callers only need one code path.
- */
 export async function streamResearch(
   params: StreamParams,
   onEvent: (e: ResearchEvent) => void,
 ): Promise<void> {
-  let res: Response;
+  await postSSE<ResearchEvent>(
+    "/research/stream",
+    {
+      query: params.query,
+      provider: params.provider,
+      model: params.model || undefined,
+      api_key: params.apiKey,
+      max_subquestions: params.maxSubquestions ?? 4,
+      search: params.search ?? true,
+    },
+    onEvent,
+    (message, code) =>
+      onEvent({ type: "error", stage: "error", message, data: { code }, research_id: "", timestamp: new Date().toISOString() }),
+    params.signal,
+  );
+}
+
+// --- chat (agent turn) ---
+export interface ChatParams {
+  message: string;
+  provider: Provider;
+  model: string;
+  apiKey: string;
+  conversationId?: number | null;
+  backend?: string;
+  signal?: AbortSignal;
+}
+
+export async function streamChat(
+  params: ChatParams,
+  onEvent: (e: TurnEvent) => void,
+): Promise<void> {
+  await postSSE<TurnEvent>(
+    "/chat/stream",
+    {
+      message: params.message,
+      provider: params.provider,
+      model: params.model || undefined,
+      api_key: params.apiKey,
+      conversation_id: params.conversationId ?? undefined,
+      backend: params.backend || undefined,
+    },
+    onEvent,
+    (message, code) =>
+      onEvent({ type: "error", phase: "error", message, data: { code }, turn_id: "", timestamp: new Date().toISOString() }),
+    params.signal,
+  );
+}
+
+// --- read-only memory/trace ---
+export async function fetchMemory(): Promise<{ facts: any[]; counts: Record<string, number> }> {
   try {
-    res = await fetch(`${BACKEND_URL}/research/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: params.query,
-        provider: params.provider,
-        model: params.model || undefined,
-        api_key: params.apiKey,
-        max_subquestions: params.maxSubquestions ?? 4,
-        search: params.search ?? true,
-      }),
-      signal: params.signal,
-    });
-  } catch (err: any) {
-    if (err?.name === "AbortError") return;
-    onEvent(errorEvent(`Could not reach the backend at ${BACKEND_URL}.`, "network"));
-    return;
+    const r = await fetch(`${BACKEND_URL}/memory`);
+    return r.ok ? r.json() : { facts: [], counts: {} };
+  } catch {
+    return { facts: [], counts: {} };
   }
+}
 
-  if (!res.ok || !res.body) {
-    let msg = `Request failed (${res.status}).`;
-    try {
-      const body = await res.json();
-      if (body?.detail) {
-        msg =
-          typeof body.detail === "string"
-            ? body.detail
-            : body.detail?.[0]?.msg
-              ? `Invalid request: ${body.detail[0].msg}`
-              : JSON.stringify(body.detail);
-      }
-    } catch {
-      /* non-JSON body */
-    }
-    onEvent(errorEvent(msg, res.status === 422 ? "validation" : "provider"));
-    return;
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
+export async function fetchTrace(): Promise<{ tool_runs: any[] }> {
   try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      let sep: number;
-      while ((sep = buffer.indexOf("\n\n")) >= 0) {
-        const frame = buffer.slice(0, sep);
-        buffer = buffer.slice(sep + 2);
-        for (const line of frame.split("\n")) {
-          const trimmed = line.trimStart();
-          if (!trimmed.startsWith("data:")) continue;
-          const payload = trimmed.slice(5).trim();
-          if (!payload) continue;
-          try {
-            onEvent(JSON.parse(payload) as ResearchEvent);
-          } catch {
-            /* ignore malformed frame */
-          }
-        }
-      }
-    }
-  } catch (err: any) {
-    if (err?.name !== "AbortError") {
-      onEvent(errorEvent("The stream was interrupted.", "network"));
-    }
+    const r = await fetch(`${BACKEND_URL}/trace`);
+    return r.ok ? r.json() : { tool_runs: [] };
+  } catch {
+    return { tool_runs: [] };
   }
 }

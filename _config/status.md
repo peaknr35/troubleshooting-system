@@ -44,3 +44,10 @@ This file is the human-readable summary._
 ### Open
 - Assistant name is a placeholder ("Local Agent"); rename in README + root CLAUDE.md.
 - PydanticAI backend is wired + its model construction tested; full live-turn validation needs a key.
+
+## M2 -- Chat dashboard (2026-10-06)
+- [x] Frontend: chat home with live turn timeline (phases, tool cards, memory), streaming via SSE
+- [x] Read-only memory panel (facts + counts + recent tools) from GET /memory + /trace
+- [x] lib/api.ts generalized (streamResearch + streamChat + fetchMemory/Trace); chatTypes mirror
+- [x] ChatContext (state persists across navigation + reloads)
+- [x] Research UI moved to /research; nav rebranded (Assistant / Research / Compare); typecheck + build green

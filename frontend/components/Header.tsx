@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { FlaskConical, GitCompare, Home, KeyRound } from "lucide-react";
+import { FlaskConical, GitCompare, KeyRound, MessageSquare, Sparkles } from "lucide-react";
 
 import { ApiKeyManager } from "./ApiKeyManager";
 
 const NAV = [
-  { href: "/", label: "Research", icon: Home },
+  { href: "/", label: "Assistant", icon: MessageSquare },
+  { href: "/research", label: "Research", icon: FlaskConical },
   { href: "/compare", label: "Compare", icon: GitCompare },
 ];
 
@@ -27,8 +28,8 @@ export function Header() {
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <FlaskConical className="h-5 w-5" style={{ color: "var(--accent)" }} />
-            <span>Deep Research Studio</span>
+            <Sparkles className="h-5 w-5" style={{ color: "var(--accent)" }} />
+            <span>Local Agent</span>
           </Link>
           <nav className="flex items-center gap-1">
             {NAV.map((n) => {

@@ -1,9 +1,9 @@
-import { ResearchInterface } from "@/components/ResearchInterface";
+import { ChatWindow } from "@/components/chat/ChatWindow";
 
 export default function Page() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 pb-24">
-      <ResearchInterface />
+    <div className="mx-auto w-full max-w-5xl px-4 pb-8">
+      <ChatWindow />
     </div>
   );
 }
