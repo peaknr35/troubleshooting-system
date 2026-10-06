@@ -24,3 +24,8 @@ This file is the human-readable summary._
 - [ ] Optional page-content fetch to enrich findings (currently snippet-based)
 - [ ] Optional Tavily search backend when a key is provided
 - [ ] Persisted research history (would require leaving "stateless" -- see project non-goals)
+
+## Restructure log
+- 2026-10-06: Completed per-folder ICM -- added a CONTEXT.md to every folder
+  (identity, contents, rules, where to add things), a `_templates/` starter set,
+  and a generated `FILE-MAP.md` index. Additive only; no application code changed.
